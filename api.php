@@ -14,8 +14,8 @@ class Api{
      * @param Array $data
      * @return json
      */
-    function curl_connect($url, $request_type, $data = array())
-    {
+    public function curl_connect(string $url, string $request_type, Array $data = array()){
+        
         $url = ENDPOINT . $url;
 
         if ($request_type == 'GET'){
@@ -23,8 +23,16 @@ class Api{
         }
 
         $curl = curl_init();
+
+        $headers = array(
+            'Content-Type: application/json'
+        );
+
         curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_ENCODING, '');
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($curl, CURLOPT_HTTP_VERSION, 'CURL_HTTP_VERSION_1_1');
         curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $request_type); 
         curl_setopt($curl, CURLOPT_TIMEOUT, 0);

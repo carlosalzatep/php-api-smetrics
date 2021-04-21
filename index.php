@@ -1,13 +1,7 @@
 <?php
 include_once('config.php');
 include_once('api.php');
+include_once('Controller.php');
 
-$API = new Api();
+$controller = new Controller($data);
 
-//Register Token
-$data = array(
-    'client_id' => CLIENT_ID,
-    'email' => EMAIL,
-    'name' => NAME
-);
-print_r($API->curl_connect('register', 'POST', $data));
