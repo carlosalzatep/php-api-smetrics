@@ -1,4 +1,8 @@
 # php-api-smetrics
 PHP REST API Call using Curl
 
-## OPP structure
+## Files
+
+ - config.php
+ - classes.php
+ - index.php
