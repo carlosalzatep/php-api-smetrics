@@ -1,6 +1,6 @@
 # php-api-smetrics
-PHP REST API Call using Curl
-MVC Model
+> PHP REST API Call using Curl
+> MVC Model
 
 ## Files
 
@@ -8,3 +8,7 @@ MVC Model
  - api.php
  - Controller.php
  - index.php
+
+
+## Author
+**Carlos Alzate**
