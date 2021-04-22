@@ -9,6 +9,9 @@ class Controller extends Api{
 
     //Stats
     public $AvgCharlenMonth = array();
+    public $LongestPostMonth = array();
+    public $TotalPostWeek = array();
+    public $AvgPostUserMonth = array();
 
     function __construct($data){
 
@@ -16,6 +19,21 @@ class Controller extends Api{
 
         $this->AvgCharlenMonth = array(
             'tite' => 'Average character length of posts per month',
+            'data' => array()
+        );
+
+        $this->LongestPostMonth = array(
+            'tite' => 'Longest post by character length per month',
+            'data' => array()
+        );
+
+        $this->LongestPostMonth = array(
+            'tite' => 'Total posts split by week number',
+            'data' => array()
+        );
+
+        $this->AvgPostUserMonth = array(
+            'tite' => 'Average number of posts per user per month',
             'data' => array()
         );
 
@@ -29,7 +47,7 @@ class Controller extends Api{
         //var_dump($this->postsList);
 
         // 4. Stats
-        $this->getAvgCharlenMonth();
+        $this->getStats();
 
         $this->getErrors();
     }
@@ -83,6 +101,9 @@ class Controller extends Api{
                 $itemP->strlen = strlen($itemP->message);
 
                 $this->setAvgCharlenMonth($itemP);
+                $this->setLongestPostMonth($itemP);
+                $this->setTotalPostWeek($itemP);
+                $this->setAvgPostUserMonth($itemP);
             }
 
             $this->postsList = array_merge($this->postsList, $TMPposts->data->posts);
@@ -91,6 +112,9 @@ class Controller extends Api{
     }
 
 
+    /**
+     * Average character length of posts per month
+     */
     public function setAvgCharlenMonth(object $item)
     {
         $itemMonth = (int)$item->month;
@@ -104,13 +128,72 @@ class Controller extends Api{
         $this->AvgCharlenMonth['data'][$itemMonth]['avg'] = $avg;
     }
 
-    public function getAvgCharlenMonth()
+
+    /**
+     * Longest post by character length per month
+     */
+    public function setLongestPostMonth(object $item)
     {
-        echo json_encode($this->AvgCharlenMonth, JSON_PRETTY_PRINT);
+        $itemMonth = (int)$item->month;
+        $currrentStrlen = isset($this->LongestPostMonth['data'][$itemMonth]['post']->strlen) ? $this->LongestPostMonth['data'][$itemMonth]['post']->strlen : 0;
+
+        if( $currrentStrlen <= $item->strlen ){
+
+            $this->LongestPostMonth['data'][$itemMonth]['month_number'] = $item->month;
+            $this->LongestPostMonth['data'][$itemMonth]['post'] = $item;
+        }
     }
 
     /**
-     * Get erros list
+     * Total posts split by week number
+     */
+    public function setTotalPostWeek(object $item)
+    {
+        $itemWeek = (int)$item->week;
+        $total_items = isset($this->TotalPostWeek['data'][$itemWeek]['total_items']) ? $this->TotalPostWeek['data'][$itemWeek]['total_items'] + 1 : 1;
+
+        $this->TotalPostWeek['data'][$itemWeek]['week_number'] = $item->week;
+        $this->TotalPostWeek['data'][$itemWeek]['total_items'] = $total_items;
+    }
+
+
+    /**
+     * Average number of posts per user per month
+     */
+    public function setAvgPostUserMonth(object $item)
+    {
+        $itemMonth = (int)$item->month;
+        $itemfrom_id = $item->from_id;
+
+        $this->AvgPostUserMonth['data'][$itemfrom_id]['from_name'] = $item->from_name;
+
+        $this->AvgPostUserMonth['data'][$itemfrom_id][$itemMonth]['month_number'] = $item->month;
+        $total_items = isset($this->AvgPostUserMonth['data'][$itemfrom_id][$itemMonth]['total_items']) ? $this->AvgPostUserMonth['data'][$itemfrom_id][$itemMonth]['total_items'] + 1 : 1;
+
+        $this->AvgPostUserMonth['data'][$itemfrom_id][$itemMonth]['total_items'] = $total_items;
+    }
+
+
+    /**
+     * Print JSON stats
+     */
+    public function getStats()
+    {
+        sort($this->AvgCharlenMonth['data']);
+        echo json_encode($this->AvgCharlenMonth, JSON_PRETTY_PRINT);
+
+        sort($this->LongestPostMonth['data']);
+        echo json_encode($this->LongestPostMonth, JSON_PRETTY_PRINT);
+
+        sort($this->TotalPostWeek['data']);
+        echo json_encode($this->TotalPostWeek, JSON_PRETTY_PRINT);
+
+        echo json_encode($this->AvgPostUserMonth, JSON_PRETTY_PRINT);
+    }
+
+
+    /**
+     * Print JSON erros list
      * @return echo
      */
     public function getErrors(){
