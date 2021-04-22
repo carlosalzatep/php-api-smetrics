@@ -7,19 +7,31 @@ class Controller extends Api{
     public $postsList = array();
     public $errors = array();
 
+    //Stats
+    public $AvgCharlenMonth = array();
+
     function __construct($data){
 
         $this->data = $data;
 
+        $this->AvgCharlenMonth = array(
+            'tite' => 'Average character length of posts per month',
+            'data' => array()
+        );
+
         // 1. Register Token
-        self::regiterToken();
+        $this->regiterToken();
 
-        // 2. Fetch posts
-        self::fetchFullPosts( STRATPAGE );
+        // 2.,3. Fetch posts
+        $this->fetchFullPosts( STRATPAGE );
 
-        echo json_encode($this->postsList, JSON_PRETTY_PRINT);
+        //echo json_encode($this->postsList, JSON_PRETTY_PRINT);
+        //var_dump($this->postsList);
 
-        self::getErrors();
+        // 4. Stats
+        $this->getAvgCharlenMonth();
+
+        $this->getErrors();
     }
 
     /**
@@ -33,7 +45,7 @@ class Controller extends Api{
 
         $TMPregister = parent::curl_connect('register', 'POST', $this->data);
 
-        if (!$TMPregister || !isset($TMPregister->data->sl_token)  || isset($TMPregister->error)) {
+        if ( !$TMPregister || !isset($TMPregister->data->sl_token)  || isset($TMPregister->error) ) {
             $this->errors[] = isset($TMPregister->error) ? $TMPregister->error->message : "Error in register process";
             return false;
         }
@@ -44,9 +56,8 @@ class Controller extends Api{
     }
 
     /**
-     * Fetch full posts array list
+     * Fetch full posts array list with month number, week number and chars long
      * @param Int $page
-     * @return Array 
      */
     public function fetchFullPosts(int $page = 1){
 
@@ -59,14 +70,43 @@ class Controller extends Api{
 
             $TMPposts = parent::curl_connect('posts', 'GET', $data);
 
-            if (!$TMPposts || !isset($TMPposts->data)  || isset($TMPposts->error)) {
+            if ( !$TMPposts || !isset($TMPposts->data)  || isset($TMPposts->error) ) {
                 $this->errors[] = isset($TMPposts->error) ? $TMPposts->error->message : "Error fetching posts process";
                 return false;
             }
 
-            array_push($this->postsList, $TMPposts);
+            //Add: month number, week number and chars long
+            foreach( $TMPposts->data->posts as &$itemP ){
+                
+                $itemP->month = date("m", strtotime($itemP->created_time));
+                $itemP->week = date("W", strtotime($itemP->created_time));
+                $itemP->strlen = strlen($itemP->message);
+
+                $this->setAvgCharlenMonth($itemP);
+            }
+
+            $this->postsList = array_merge($this->postsList, $TMPposts->data->posts);
         }
         while ($page++ < PAGES);
+    }
+
+
+    public function setAvgCharlenMonth(object $item)
+    {
+        $itemMonth = (int)$item->month;
+        $total_strlen = isset($this->AvgCharlenMonth['data'][$itemMonth]['total_strlen']) ? $this->AvgCharlenMonth['data'][$itemMonth]['total_strlen'] + $item->strlen : $item->strlen;
+        $total_items = isset($this->AvgCharlenMonth['data'][$itemMonth]['total_items']) ? $this->AvgCharlenMonth['data'][$itemMonth]['total_items']+1 : 1;
+        $avg = $total_strlen / $total_items;
+
+        $this->AvgCharlenMonth['data'][$itemMonth]['month_number'] = $item->month;
+        $this->AvgCharlenMonth['data'][$itemMonth]['total_strlen'] = $total_strlen;
+        $this->AvgCharlenMonth['data'][$itemMonth]['total_items'] = $total_items;
+        $this->AvgCharlenMonth['data'][$itemMonth]['avg'] = $avg;
+    }
+
+    public function getAvgCharlenMonth()
+    {
+        echo json_encode($this->AvgCharlenMonth, JSON_PRETTY_PRINT);
     }
 
     /**
@@ -74,6 +114,6 @@ class Controller extends Api{
      * @return echo
      */
     public function getErrors(){
-         echo json_encode($this->errors);
+         echo json_encode($this->errors, JSON_PRETTY_PRINT);
     }
 }
